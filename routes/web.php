@@ -11,9 +11,7 @@
 |
 */
 
-Route::get('/', function () {
-    return view('dashboard');
-})->middleware('auth');
+Route::get('/', 'DashboardController@index')->middleware('auth');
 
 Auth::routes();
 
@@ -24,8 +22,9 @@ Route::get('/profile', 'ProfileController@index');
 Route::post('user-management/search', 'UserManagementController@search')->name('user-management.search');
 Route::resource('user-management', 'UserManagementController');
 
-Route::resource('employee-management', 'EmployeeManagementController');
-Route::post('employee-management/search', 'EmployeeManagementController@search')->name('employee-management.search');
+Route::resource('student-management', 'StudentManagementController');
+Route::post('student-management/search', 'StudentManagementController@search')->name('student-management.search');
+Route::get('student-list', 'StudentManagementController@getTable');
 
 Route::resource('system-management/department', 'DepartmentController');
 Route::post('system-management/department/search', 'DepartmentController@search')->name('department.search');
@@ -47,4 +46,4 @@ Route::post('system-management/report/search', 'ReportController@search')->name(
 Route::post('system-management/report/excel', 'ReportController@exportExcel')->name('report.excel');
 Route::post('system-management/report/pdf', 'ReportController@exportPDF')->name('report.pdf');
 
-Route::get('avatars/{name}', 'EmployeeManagementController@load');
+Route::get('avatars/{name}', 'StudentManagementController@load');

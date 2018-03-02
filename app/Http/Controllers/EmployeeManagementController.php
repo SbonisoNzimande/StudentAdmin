@@ -1,229 +1,108 @@
-<?php
-
-namespace App\Http\Controllers;
-
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Response;
-use App\Employee;
-use App\City;
-use App\State;
-use App\Country;
-use App\Department;
-use App\Division;
-
-class EmployeeManagementController extends Controller
-{
-    /**
-     * Create a new controller instance.
-     *
-     * @return void
-     */
-    public function __construct()
-    {
-        $this->middleware('auth');
-    }
-
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function index()
-    {
-        $employees = DB::table('employees')
-        ->leftJoin('city', 'employees.city_id', '=', 'city.id')
-        ->leftJoin('department', 'employees.department_id', '=', 'department.id')
-        ->leftJoin('state', 'employees.state_id', '=', 'state.id')
-        ->leftJoin('country', 'employees.country_id', '=', 'country.id')
-        ->leftJoin('division', 'employees.division_id', '=', 'division.id')
-        ->select('employees.*', 'department.name as department_name', 'department.id as department_id', 'division.name as division_name', 'division.id as division_id')
-        ->paginate(5);
-
-        return view('employees-mgmt/index', ['employees' => $employees]);
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function create()
-    {
-        // $cities = City::all();
-        // $states = State::all();
-        $countries = Country::all();
-        $departments = Department::all();
-        $divisions = Division::all();
-        return view('employees-mgmt/create', ['countries' => $countries,
-        'departments' => $departments, 'divisions' => $divisions]);
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function store(Request $request)
-    {
-        $this->validateInput($request);
-        // Upload image
-        $path = $request->file('picture')->store('avatars');
-        $keys = ['lastname', 'firstname', 'middlename', 'address', 'city_id', 'state_id', 'country_id', 'zip',
-        'age', 'birthdate', 'date_hired', 'department_id', 'department_id', 'division_id'];
-        $input = $this->createQueryInput($keys, $request);
-        $input['picture'] = $path;
-        // Not implement yet
-        // $input['company_id'] = 0;
-        Employee::create($input);
-
-        return redirect()->intended('/employee-management');
-    }
-
-    /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function show($id)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function edit($id)
-    {
-        $employee = Employee::find($id);
-        // Redirect to state list if updating state wasn't existed
-        if ($employee == null || count($employee) == 0) {
-            return redirect()->intended('/employee-management');
-        }
-        $cities = City::all();
-        $states = State::all();
-        $countries = Country::all();
-        $departments = Department::all();
-        $divisions = Division::all();
-        return view('employees-mgmt/edit', ['employee' => $employee, 'cities' => $cities, 'states' => $states, 'countries' => $countries,
-        'departments' => $departments, 'divisions' => $divisions]);
-    }
-
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, $id)
-    {
-        $employee = Employee::findOrFail($id);
-        $this->validateInput($request);
-        // Upload image
-        $keys = ['lastname', 'firstname', 'middlename', 'address', 'city_id', 'state_id', 'country_id', 'zip',
-        'age', 'birthdate', 'date_hired', 'department_id', 'department_id', 'division_id'];
-        $input = $this->createQueryInput($keys, $request);
-        if ($request->file('picture')) {
-            $path = $request->file('picture')->store('avatars');
-            $input['picture'] = $path;
-        }
-
-        Employee::where('id', $id)
-            ->update($input);
-
-        return redirect()->intended('/employee-management');
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy($id)
-    {
-         Employee::where('id', $id)->delete();
-         return redirect()->intended('/employee-management');
-    }
-
-    /**
-     * Search state from database base on some specific constraints
-     *
-     * @param  \Illuminate\Http\Request  $request
-     *  @return \Illuminate\Http\Response
-     */
-    public function search(Request $request) {
-        $constraints = [
-            'firstname' => $request['firstname'],
-            'department.name' => $request['department_name']
-            ];
-        $employees = $this->doSearchingQuery($constraints);
-        $constraints['department_name'] = $request['department_name'];
-        return view('employees-mgmt/index', ['employees' => $employees, 'searchingVals' => $constraints]);
-    }
-
-    private function doSearchingQuery($constraints) {
-        $query = DB::table('employees')
-        ->leftJoin('city', 'employees.city_id', '=', 'city.id')
-        ->leftJoin('department', 'employees.department_id', '=', 'department.id')
-        ->leftJoin('state', 'employees.state_id', '=', 'state.id')
-        ->leftJoin('country', 'employees.country_id', '=', 'country.id')
-        ->leftJoin('division', 'employees.division_id', '=', 'division.id')
-        ->select('employees.firstname as employee_name', 'employees.*','department.name as department_name', 'department.id as department_id', 'division.name as division_name', 'division.id as division_id');
-        $fields = array_keys($constraints);
-        $index = 0;
-        foreach ($constraints as $constraint) {
-            if ($constraint != null) {
-                $query = $query->where($fields[$index], 'like', '%'.$constraint.'%');
-            }
-
-            $index++;
-        }
-        return $query->paginate(5);
-    }
-
-     /**
-     * Load image resource.
-     *
-     * @param  string  $name
-     * @return \Illuminate\Http\Response
-     */
-    public function load($name) {
-         $path = storage_path().'/app/avatars/'.$name;
-        if (file_exists($path)) {
-            return Response::download($path);
-        }
-    }
-
-    private function validateInput($request) {
-        $this->validate($request, [
-            'lastname' => 'required|max:60',
-            'firstname' => 'required|max:60',
-            'middlename' => 'required|max:60',
-            'address' => 'required|max:120',
-            'country_id' => 'required',
-            'zip' => 'required|max:10',
-            'age' => 'required',
-            'birthdate' => 'required',
-            'date_hired' => 'required',
-            'department_id' => 'required',
-            'division_id' => 'required'
-        ]);
-    }
-
-    private function createQueryInput($keys, $request) {
-        $queryInput = [];
-        for($i = 0; $i < sizeof($keys); $i++) {
-            $key = $keys[$i];
-            $queryInput[$key] = $request[$key];
-        }
-
-        return $queryInput;
-    }
-}
+@extends('students-mgmt.base')
+@section('action-content')
+    <!-- Main content -->
+    <section class="content">
+      <div class="box">
+  <div class="box-header">
+    <div class="row">
+        <div class="col-sm-8">
+          <h3 class="box-title">List of employees</h3>
+        </div>
+        <div class="col-sm-4">
+          <a class="btn btn-primary" href="{{ route('student-management.create') }}">Add new employee</a>
+        </div>
+    </div>
+  </div>
+  <!-- /.box-header -->
+  <div class="box-body">
+      <div class="row">
+        <div class="col-sm-6"></div>
+        <div class="col-sm-6"></div>
+      </div>
+      <form method="POST" action="{{ route('student-management.search') }}">
+         {{ csrf_field() }}
+         @component('layouts.search', ['title' => 'Search'])
+          @component('layouts.two-cols-search-row', ['items' => ['First Name', 'Department_Name'], 
+          'oldVals' => [isset($searchingVals) ? $searchingVals['firstname'] : '', isset($searchingVals) ? $searchingVals['department_name'] : '']])
+          @endcomponent
+        @endcomponent
+      </form>
+    <div id="example2_wrapper" class="dataTables_wrapper form-inline dt-bootstrap">
+      <div class="row">
+        <div class="col-sm-12">
+          <table id="example2" class="table table-bordered table-hover dataTable" role="grid" aria-describedby="example2_info">
+            <thead>
+              <tr role="row">
+                <th width="8%" tabindex="0" aria-controls="example2" rowspan="1" colspan="1" aria-label="Picture: activate to sort column descending" aria-sort="ascending">Picture</th>
+                <th width="10%" class="sorting_asc" tabindex="0" aria-controls="example2" rowspan="1" colspan="1" aria-label="Name: activate to sort column descending" aria-sort="ascending">Employee Name</th>
+                <th width="12%" class="sorting hidden-xs" tabindex="0" aria-controls="example2" rowspan="1" colspan="1" aria-label="Address: activate to sort column ascending">Address</th>
+                <th width="8%" class="sorting hidden-xs" tabindex="0" aria-controls="example2" rowspan="1" colspan="1" aria-label="Age: activate to sort column ascending">Age</th>
+                <th width="8%" class="sorting hidden-xs" tabindex="0" aria-controls="example2" rowspan="1" colspan="1" aria-label="Birthdate: activate to sort column ascending">Birthdate</th>
+                <th width="8%" class="sorting hidden-xs" tabindex="0" aria-controls="example2" rowspan="1" colspan="1" aria-label="HiredDate: activate to sort column ascending">Hired Date</th>
+                <th width="8%" class="sorting hidden-xs" tabindex="0" aria-controls="example2" rowspan="1" colspan="1" aria-label="Department: activate to sort column ascending">Department</th>
+                <th width="8%" class="sorting hidden-xs" tabindex="0" aria-controls="example2" rowspan="1" colspan="1" aria-label="Division: activate to sort column ascending">Division</th>
+                <th tabindex="0" aria-controls="example2" rowspan="1" colspan="2" aria-label="Action: activate to sort column ascending">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+            @foreach ($employees as $employee)
+                <tr role="row" class="odd">
+                  <td><img src="../{{$employee->picture }}" width="50px" height="50px"/></td>
+                  <td class="sorting_1">{{ $employee->firstname }} {{$employee->middlename}} {{$employee->lastname}}</td>
+                  <td class="hidden-xs">{{ $employee->address }}</td>
+                  <td class="hidden-xs">{{ $employee->age }}</td>
+                  <td class="hidden-xs">{{ $employee->birthdate }}</td>
+                  <td class="hidden-xs">{{ $employee->date_hired }}</td>
+                  <td class="hidden-xs">{{ $employee->department_name }}</td>
+                  <td class="hidden-xs">{{ $employee->division_name }}</td>
+                  <td>
+                    <form class="row" method="POST" action="{{ route('student-management.destroy', ['id' => $employee->id]) }}" onsubmit = "return confirm('Are you sure?')">
+                        <input type="hidden" name="_method" value="DELETE">
+                        <input type="hidden" name="_token" value="{{ csrf_token() }}">
+                        <a href="{{ route('student-management.edit', ['id' => $employee->id]) }}" class="btn btn-warning col-sm-3 col-xs-5 btn-margin">
+                        Update
+                        </a>
+                         <button type="submit" class="btn btn-danger col-sm-3 col-xs-5 btn-margin">
+                          Delete
+                        </button>
+                    </form>
+                  </td>
+              </tr>
+            @endforeach
+            </tbody>
+            <tfoot>
+              <tr>
+                <tr role="row">
+                <th width="8%" tabindex="0" aria-controls="example2" rowspan="1" colspan="1" aria-label="Picture: activate to sort column descending" aria-sort="ascending">Picture</th>
+                <th width="10%" class="sorting_asc" tabindex="0" aria-controls="example2" rowspan="1" colspan="1" aria-label="Name: activate to sort column descending" aria-sort="ascending">Employee Name</th>
+                <th width="12%" class="sorting hidden-xs" tabindex="0" aria-controls="example2" rowspan="1" colspan="1" aria-label="Address: activate to sort column ascending">Address</th>
+                <th width="8%" class="sorting hidden-xs" tabindex="0" aria-controls="example2" rowspan="1" colspan="1" aria-label="Age: activate to sort column ascending">Age</th>
+                <th width="8%" class="sorting hidden-xs" tabindex="0" aria-controls="example2" rowspan="1" colspan="1" aria-label="Birthdate: activate to sort column ascending">Birthdate</th>
+                <th width="8%" class="sorting hidden-xs" tabindex="0" aria-controls="example2" rowspan="1" colspan="1" aria-label="HiredDate: activate to sort column ascending">Hired Date</th>
+                <th width="8%" class="sorting hidden-xs" tabindex="0" aria-controls="example2" rowspan="1" colspan="1" aria-label="Department: activate to sort column ascending">Department</th>
+                <th width="8%" class="sorting hidden-xs" tabindex="0" aria-controls="example2" rowspan="1" colspan="1" aria-label="Division: activate to sort column ascending">Division</th>
+                <th tabindex="0" aria-controls="example2" rowspan="1" colspan="2" aria-label="Action: activate to sort column ascending">Action</th>
+              </tr>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-sm-5">
+          <div class="dataTables_info" id="example2_info" role="status" aria-live="polite">Showing 1 to {{count($employees)}} of {{count($employees)}} entries</div>
+        </div>
+        <div class="col-sm-7">
+          <div class="dataTables_paginate paging_simple_numbers" id="example2_paginate">
+            {{ $employees->links() }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- /.box-body -->
+</div>
+    </section>
+    <!-- /.content -->
+  </div>
+@endsection

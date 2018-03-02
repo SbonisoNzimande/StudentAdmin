@@ -139,6 +139,18 @@ class UserManagementController extends Controller
     }
 
     /**
+     * Get Table of students
+     *
+     * @param  
+     * @return \Illuminate\Http\Response
+     */
+    public function getTable()
+    {
+        $users = User::paginate(5);
+        return redirect()->intended('/user-management');
+    }
+
+    /**
      * Search user from database base on some specific constraints
      *
      * @param  \Illuminate\Http\Request  $request

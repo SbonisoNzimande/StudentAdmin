@@ -7,16 +7,21 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>EM | Empployee Management</title>
+    <title>Academy of Nursing & Healthcare Training  | Student Management</title>
     <!-- Tell the browser to be responsive to screen width -->
     <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+    <!-- CSFR token for ajax call -->
+    <meta name="_token" content="{{ csrf_token() }}"/>
     <!-- Bootstrap 3.3.6 -->
     <link href="{{ asset("/bower_components/AdminLTE/bootstrap/css/bootstrap.min.css") }}" rel="stylesheet" type="text/css" />
+
+      <!-- toastr notifications -->
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.min.css">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.5.0/css/font-awesome.min.css">
     <!-- Ionicons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/ionicons/2.0.1/css/ionicons.min.css">
-    <link href="{{ asset("/bower_components/AdminLTE/plugins/datatables/dataTables.bootstrap.css")}}" rel="stylesheet" type="text/css" />
+    <link href="{{ asset("/bower_components/bootstrap-table/src/bootstrap-table.css")}}" rel="stylesheet" type="text/css" />
     <link href="{{ asset("/bower_components/AdminLTE/plugins/daterangepicker/daterangepicker.css")}}" rel="stylesheet" type="text/css" />
     <link href="{{ asset("/bower_components/AdminLTE/plugins/datepicker/datepicker3.css")}}" rel="stylesheet" type="text/css" />
     <!-- Theme style -->
@@ -70,8 +75,15 @@
     <script src="{{ asset ("/bower_components/AdminLTE/plugins/jQuery/jquery-2.2.3.min.js") }}"></script>
     <!-- Bootstrap 3.3.2 JS -->
     <script src="{{ asset ("/bower_components/AdminLTE/bootstrap/js/bootstrap.min.js") }}" type="text/javascript"></script>
-    <script  src="{{ asset ("/bower_components/AdminLTE/plugins/datatables/jquery.dataTables.min.js") }}" type="text/javascript" ></script>
-    <script  src="{{ asset ("/bower_components/AdminLTE/plugins/datatables/dataTables.bootstrap.min.js") }}" type="text/javascript" ></script>
+    {{-- <script  src="{{ asset ("/bower_components/AdminLTE/plugins/datatables/jquery.dataTables.min.js") }}" type="text/javascript" ></script> --}}
+    {{-- <link rel="stylesheet" href="../public/bootstrap-table/src/bootstrap-table.css" /> --}}
+    {{-- <script  src="{{ asset ("/bower_components/bootstrap-table/src/bootstrap-table.css") }}" type="text/javascript" ></script> --}}
+
+    <script src="/bower_components/bootstrap-table/src/bootstrap-table.js"></script>
+    <script src="/bower_components/bootstrap-table/src/extensions/export/bootstrap-table-export.js"></script>
+    <script src="https://rawgit.com/hhurz/tableExport.jquery.plugin/master/tableExport.js"></script>
+
+
     <script  src="{{ asset ("/bower_components/AdminLTE/plugins/slimScroll/jquery.slimscroll.min.js") }}" type="text/javascript" ></script>
     <script  src="{{ asset ("/bower_components/AdminLTE/plugins/fastclick/fastclick.js") }}" type="text/javascript" ></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.11.2/moment.min.js"></script>
@@ -83,6 +95,8 @@
     <!-- AdminLTE App -->
     <script src="{{ asset ("/bower_components/AdminLTE/dist/js/app.min.js") }}" type="text/javascript"></script>
     <script src="{{ asset ("/bower_components/AdminLTE/dist/js/demo.js") }}" type="text/javascript"></script>
+    <!-- toastr notifications -->
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>
     <!-- Optionally, you can add Slimscroll and FastClick plugins.
       Both of these plugins are recommended to enhance the
       user experience. Slimscroll is required when using the
@@ -90,24 +104,31 @@
       <script>
       $(document).ready(function() {
         //Date picker
-        $('#birthDate').datepicker({
+        $('#registrationDate').datepicker({
           autoclose: true,
-          format: 'yyyy/mm/dd'
+          format: 'yyyy-mm-dd'
         });
+
+        $('#date_of_registration_edit').datepicker({
+          autoclose: true,
+          format: 'yyyy-mm-dd'
+        });
+        
         $('#hiredDate').datepicker({
           autoclose: true,
-          format: 'yyyy/mm/dd'
+          format: 'yyyy-mm-dd'
         });
         $('#from').datepicker({
           autoclose: true,
-          format: 'yyyy/mm/dd'
+          format: 'yyyy-mm-dd'
         });
         $('#to').datepicker({
           autoclose: true,
-          format: 'yyyy/mm/dd'
+          format: 'yyyy-mm-dd'
         });
     });
 </script>
 <script src="{{ asset('js/site.js') }}"></script>
+<script src="{{ asset('js/students/ajax.js') }}"></script>
   </body>
 </html>

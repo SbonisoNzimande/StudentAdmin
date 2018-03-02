@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use View;
+use App\Student;
+use App\User;
 
 class DashboardController extends Controller
 {
@@ -23,6 +26,8 @@ class DashboardController extends Controller
      */
     public function index()
     {
-        return view('dashboard');
+        $student_total = Student::count();
+        $user_total = User::count();
+        return view('dashboard', ['student_total' => $student_total, 'user_total' => $user_total]);
     }
 }
